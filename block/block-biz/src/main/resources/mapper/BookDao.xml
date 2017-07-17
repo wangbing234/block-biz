@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qk.module.font.biz.dao.com.qk.module.font.biz.entity.BookDao">
+
+	<!-- 目的：为dao接口方法提供sql语句配置 -->
+	<select id="getById" resultType="com.qk.module.font.biz.entity.Book" parameterType="long">
+		<!-- 具体的sql -->
+		SELECT
+			*
+		FROM
+			book
+		WHERE
+			book_id = #{bookId}
+	</select>
+	
+	<insert id="insert">
+		<!-- ignore 主键冲突，报错 -->
+		INSERT ignore INTO book (book_id, name,number) VALUES (#{bookId}, #{name},#{number})
+	</insert>
+	
+	<update id="update">
+		UPDATE book
+		SET book_id = #{bookId}
+		<if test="number!=null and number!=''">
+			,number=#{number}
+		</if>
+		<if test="name!=null and name!=''">
+			,name=#{name}
+		</if>
+		
+		WHERE
+			book_id = #{bookId}
+	</update>
+	
+	
+	<select id="getList" resultType="com.qk.module.font.biz.entity.Book">
+		SELECT
+			book_id,
+			name,
+			number
+		FROM
+			book
+		ORDER BY
+			book_id
+		LIMIT #{offset}, #{limit}
+	</select>
+	
+	
+	<delete id="deleteById">
+		delete from
+		book where 1=1 and book_id= #{bookId}
+	</delete>
+	
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:mvc="http://www.springframework.org/schema/mvc" 
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+    <!-- 配置SpringMVC -->
+    <!-- 1.开启SpringMVC注解模式 -->
+    <!-- 简化配置： 
+        (1)自动注册DefaultAnootationHandlerMapping,AnotationMethodHandlerAdapter 
+        (2)提供一些列：数据绑定，数字和日期的format @NumberFormat, @DateTimeFormat, xml,json默认读写支持 
+    -->
+    <mvc:annotation-driven />
+ 	<context:annotation-config/>
+    <!-- 2.静态资源默认servlet配置
+        (1)加入对静态资源的处理：js,gif,png
+        (2)允许使用"/"做整体映射
+         <bean class="org.springframework.http.converter.StringHttpMessageC‌​onverter"><construct‌​or-arg value="UTF-8" /></bean>
+     -->
+     <mvc:default-servlet-handler/>
+
+
+	<bean id="jackson_hmc"
+		class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+		<property name="objectMapper">
+			<bean class="com.fasterxml.jackson.databind.ObjectMapper">
+				<property name="dateFormat">
+					<bean class="java.text.SimpleDateFormat">
+						<constructor-arg type="java.lang.String" value="yyyy-MM-dd HH:mm:ss"></constructor-arg>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+     <!-- 4.扫描web相关的bean -->
+     <context:component-scan base-package="com.qk.module.**.web" />
+     
+     
+     <!-- 文件上传下载开关 
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" ><value>104857600</value></property>
+    </bean>-->
+     
+     <!-- 默认返回json ,乱码问题-->
+     <bean id="AnnotationMethodHandlerAdapter"   class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">  
+        <property name="messageConverters">  
+            <list>  
+                <ref bean="mappingJackson2HttpMessageConverter" />  
+            </list>  
+        </property>  
+    </bean>  
+     
+    <bean id="mappingJackson2HttpMessageConverter"  
+        class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">  
+        <property name="supportedMediaTypes">  
+            <list>  
+                <value>text/html;charset=UTF-8</value>  
+                <value>text/json;charset=UTF-8</value>  
+                <value>application/json;charset=UTF-8</value>  
+            </list>  
+        </property>  
+    </bean>  
+    
+    
+    <mvc:interceptors>
+  			<!-- 所有请求 -->
+		   <bean class="com.qk.core.interceptor.ContextInterceptor"/>
+		   <mvc:interceptor>
+		   		<!-- 只过滤后台用户登录 -->
+                <mvc:mapping path="/admin/**"/>
+			    <bean class="com.qk.core.interceptor.AdminLoginInterceptor"/>
+		   </mvc:interceptor>
+		   <mvc:interceptor>
+			   <mvc:mapping path="/font/**"/>
+			   <bean class="com.qk.core.interceptor.FontLoginInterceptor"/>
+		   </mvc:interceptor>
+	</mvc:interceptors>  
+    
+</beans>
