@@ -7,22 +7,24 @@ import javax.annotation.Resource;
 
 import org.springframework.stereotype.Repository;
 
+import com.qk.core.ibatis.beans.PagerModel;
 import com.qk.core.ibatis.beans.Po;
-import com.qk.core.ibatis.beans.WherePrams;
 import com.qk.core.ibatis.dao.BaseDao;
 import com.qk.core.ibatis.service.BaseService;
+import com.qk.core.ibatis.sql.criteria.WherePrams;
+import com.qk.core.ibatis.sql.order.Order;
 
 @Repository
-public class BaseServiceImpl<T extends Po, PK extends Serializable> implements BaseService<T, PK> {
+public class BaseServiceImpl<T extends Po> implements BaseService<T> {
 
 	@Resource
-	private BaseDao<T, PK> baseDao; 
+	private BaseDao<T> baseDao; 
 	
-	public BaseDao<T, PK> getBaseDao() {
+	public BaseDao<T> getBaseDao() {
 		return baseDao;
 	}
 
-	public void setBaseDao(BaseDao<T, PK> baseDao) {
+	public void setBaseDao(BaseDao<T> baseDao) {
 		this.baseDao = baseDao;
 	}
 
@@ -33,7 +35,7 @@ public class BaseServiceImpl<T extends Po, PK extends Serializable> implements B
 	}
 
 	@Override
-	public Serializable getField(PK id, String fileName) {
+	public Serializable getField(Serializable id, String fileName) {
 		// TODO Auto-generated method stub
 		return baseDao.getField(id, fileName);
 	}
@@ -44,20 +46,20 @@ public class BaseServiceImpl<T extends Po, PK extends Serializable> implements B
 	}
 
 	@Override
-	public int del(PK id) {
+	public int del(Serializable id) {
 		return baseDao.del(id);
 	}
 	
 	@Override
-	public T get(PK id) {
+	public T get(Serializable id) {
 		return baseDao.get(id);
 	}
 
 
 	@Override
-	public List<T> list(WherePrams where) {
+	public List<T> list(WherePrams where,Order order) {
 		// TODO Auto-generated method stub
-		return baseDao.list(where);
+		return baseDao.list(where,order);
 	}
 
 	@Override
@@ -66,7 +68,7 @@ public class BaseServiceImpl<T extends Po, PK extends Serializable> implements B
 	}
 
 	@Override
-	public T get(Class<T> t, PK id) {
+	public T get(Class<T> t, Serializable id) {
 		// TODO Auto-generated method stub
 		return baseDao.get(t, id);
 	}
@@ -74,21 +76,33 @@ public class BaseServiceImpl<T extends Po, PK extends Serializable> implements B
 	/**--以下接口没有实现--**/
 	
 	@Override
-	public int update(Po po, WherePrams where) {
+	public int update(T po, WherePrams where) {
 		// TODO Auto-generated method stub
-		return 0;
+		return baseDao.update(po, where);
 	}
 	
 	@Override
 	public int del(WherePrams where) {
 		// TODO Auto-generated method stub
-		return 0;
+		return baseDao.del(where);
 	}
 
 	
 	@Override
 	public T get(WherePrams where) {
 		// TODO Auto-generated method stub
-		return null;
+		return baseDao.get(where);
+	}
+
+	@Override
+	public PagerModel<T> page(WherePrams where, Order order, int offset, int pageSize) {
+		// TODO Auto-generated method stub
+		return baseDao.page(where, order, offset, pageSize);
+	}
+
+	@Override
+	public Integer selectCountByParm(WherePrams where) {
+		// TODO Auto-generated method stub
+		return baseDao.selectCountByParm(where); 
 	}
 }

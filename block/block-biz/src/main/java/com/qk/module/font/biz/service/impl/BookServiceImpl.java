@@ -12,7 +12,7 @@ import com.qk.module.font.biz.service.BookService;
 
 @Service
 @Component
-public class BookServiceImpl extends BaseServiceImpl<Book, Long> implements BookService {
+public class BookServiceImpl extends BaseServiceImpl<Book> implements BookService {
 
 
 	// 注入Service依赖

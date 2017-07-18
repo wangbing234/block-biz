@@ -4,13 +4,8 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import com.qk.core.ibatis.util.EmptyUtil;
-import com.qk.core.ibatis.util.Formatter;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.annotation.Resource;
 
@@ -18,26 +13,30 @@ import org.mybatis.spring.SqlSessionTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import com.qk.core.ibatis.annotation.po.FieldName;
-import com.qk.core.ibatis.beans.FmtParm;
-import com.qk.core.ibatis.beans.Method;
+import com.qk.core.ibatis.beans.PagerModel;
 import com.qk.core.ibatis.beans.Po;
 import com.qk.core.ibatis.beans.Pram;
-import com.qk.core.ibatis.beans.WherePrams;
 import com.qk.core.ibatis.dao.BaseDao;
-import com.qk.core.ibatis.sql.where.C;
+import com.qk.core.ibatis.sql.builder.MyBatisSql;
+import com.qk.core.ibatis.sql.criteria.WherePrams;
+import com.qk.core.ibatis.sql.order.Order;
 import com.qk.core.ibatis.sql.where.SqlUtil;
+import com.qk.core.ibatis.util.EmptyUtil;
 import com.qk.core.ibatis.util.GenericsUtils;
 
 @SuppressWarnings("unused")
 @Repository
-public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseDao<T, PK> {
+public class BaseDaoImpl<T extends Po> implements BaseDao<T> {
 
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
+    private static final String SQL_NAME = "__SQL";
+
+	protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Resource(name = "sqlSessionTemplate")
-    private SqlSessionTemplate sqlSessionTemplate;
+    protected SqlSessionTemplate sqlSessionTemplate;
 
     private Class<T> entityClass;
 
@@ -97,12 +96,12 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
             parmMap.put(filed, value);
         }
         sql += prams + ") value (" + values +")";
-        parmMap.put("value", sql);
+        parmMap.put(SQL_NAME, sql);
         return sqlSessionTemplate.insert("Dao.add", parmMap);
     }
     
     @Override
-    public int del(PK id) {
+    public int del(Serializable id) {
         // TODO Auto-generated method stub
     	Map<String, Object> parmMap=new HashMap<String, Object>();
         String idDbName=idName;
@@ -115,7 +114,7 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
 		}
         String sql = "delete from " + tableName + " where "+idDbName+"=#{"+idName+"}";
         parmMap.put(idName, id);
-        parmMap.put("value", sql);
+        parmMap.put(SQL_NAME, sql);
         return sqlSessionTemplate.delete("Dao.deleteById", parmMap);
     }
 
@@ -143,7 +142,7 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
         	}
         }
         sql.append(" where ").append(sqlUtil.getDbFiledName(po,idName)).append("=#{").append(idName).append("}");
-        parmMap.put("value", sql);
+        parmMap.put(SQL_NAME, sql);
         return sqlSessionTemplate.update("Dao.update", parmMap);
     }
     
@@ -155,13 +154,13 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
 
 
     @Override
-    public T get(PK id) {
+    public T get(Serializable id) {
         return get(this.entityClass, id);
     }
     
 
 	@Override
-	public T get(Class<T> t, PK id) {
+	public T get(Class<T> t, Serializable id) {
 		   // TODO Auto-generated method stub
         StringBuffer sql = new StringBuffer("select ");
         for (int i = 0; i < selectSqlParms.size(); i++) {
@@ -182,14 +181,14 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
 		}
         sql.append(" from ").append(tableName).append(" where ").append(idDbName).append("=#{").append(idName).append("}");
         Map<String, Object> parmMap=new HashMap<String, Object>();
-        parmMap.put("value", sql);
+        parmMap.put(SQL_NAME, sql);
         parmMap.put(idName, id);
         Map<String, Object> resultMap = sqlSessionTemplate.selectOne("Dao.getById", parmMap);
         return handleResult(resultMap, t);
 	}
 
     @Override
-    public Serializable getField(PK id, String fileName) {
+    public Serializable getField(Serializable id, String fileName) {
         // TODO Auto-generated method stub
         String field = fileName;
         String tabField = "";
@@ -217,9 +216,9 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
         sql += tabField + " from " + tableName + " where "+idDbName+"=#{" + idName + "}";
         
         Map<String, Object> parmMap=new HashMap<String, Object>();
-        parmMap.put("value", sql);
+        parmMap.put(SQL_NAME, sql);
         parmMap.put(idName, id);
-        Map<String, Object> resultMap = sqlSessionTemplate.selectOne("getFieldById", parmMap);
+        Map<String, Object> resultMap = sqlSessionTemplate.selectOne("Dao.getFieldById", parmMap);
         return (Serializable) resultMap.get(fileName);
     }
     
@@ -250,18 +249,20 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
                 sql += " ";
             }
         }
-        sql += "from " + tableName + where.getWherePrams() + ";";
-
-        Map<String, Object> resultMap = sqlSessionTemplate.selectOne("getByParm", sql);
-
+        MyBatisSql sqlObj = new MyBatisSql(where);
+        sql += "from " + tableName + sqlObj.getSql();
+        Map<String, Object> map = sqlObj.getArgMap();
+        map.put(SQL_NAME, sql);
+        Map<String, Object> resultMap = sqlSessionTemplate.selectOne("Dao.getByParm", map);
         return handleResult(resultMap, this.entityClass);
     }
+    
+    
 
 
     @Override
-    public List<T> list(WherePrams where) {
+    public List<T> list(WherePrams where,Order order) {
         // TODO Auto-generated method stub
-
         String sql = "select ";
         for (int i = 0; i < selectSqlParms.size(); i++) {
             sql += selectSqlParms.get(i).getFile();
@@ -271,10 +272,12 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
                 sql += " ";
             }
         }
-        sql += "from " + tableName + ((where==null)?"":where.getWherePrams());
-
-        List<Map<String, Object>> selectList = sqlSessionTemplate.selectList("selectList", sql);
-
+        
+        MyBatisSql sqlObj = new MyBatisSql(where);
+        Map<String, Object> argMap = sqlObj.getArgMap();
+        sql += "from " + tableName + ((where==null)?"":sqlObj.getSql()) +(StringUtils.isEmpty(order)?"":order.toString());
+        argMap.put(SQL_NAME, sql);
+        List<Map<String, Object>> selectList = sqlSessionTemplate.selectList("Dao.selectList", argMap);
         List<T> list = new ArrayList<>();
         for (Map<String, Object> map : selectList) {
             T t = handleResult(map, this.entityClass);
@@ -282,6 +285,56 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
         }
         return list;
     }
+    
+    public Integer selectCountByParm(WherePrams where) {
+    	 // TODO Auto-generated method stub
+        MyBatisSql sqlObj = new MyBatisSql(where);
+        Map<String, Object> argMap = sqlObj.getArgMap();
+        String sql = "select count(1) from " + tableName + ((where==null)?"":sqlObj.getSql());
+        argMap.put(SQL_NAME, sql);
+		return sqlSessionTemplate.selectOne("Dao.selectCountByParm", argMap);
+	}
+    
+    
+	@Override
+	public PagerModel<T> page(WherePrams where, Order order, int offset, int pageSize) {
+		MyBatisSql sqlObj = new MyBatisSql(where);
+        Map<String, Object> argMap = sqlObj.getArgMap();
+        String countSql = "select count(1) from " + tableName + ((where==null)?"":sqlObj.getSql());
+        argMap.put(SQL_NAME, countSql);
+		int count=sqlSessionTemplate.selectOne("Dao.selectCountByParm", argMap);
+		PagerModel pm=null;
+		if(count>0l)
+		{
+			pm=new PagerModel();
+			pm.setTotal(count);
+			pm.setPageSize(pageSize);
+			pm.setOffset(offset);
+			
+			 // TODO Auto-generated method stub
+	        String sql = "select ";
+	        for (int i = 0; i < selectSqlParms.size(); i++) {
+	            sql += selectSqlParms.get(i).getFile();
+	            if(i < selectSqlParms.size() -1){
+	                sql += ",";
+	            }else{
+	                sql += " ";
+	            }
+	        }
+	        sql += "from " + tableName + ((where==null)?"":sqlObj.getSql()) +(StringUtils.isEmpty(order)?"":order.toString())+" limit #{offset},#{pageSize}";
+	        argMap.put(SQL_NAME, sql);
+	        argMap.put("offset", offset);
+	        argMap.put("pageSize", pageSize);
+	        List<Map<String, Object>> selectList = sqlSessionTemplate.selectList("Dao.selectList", argMap);
+	        List<T> list = new ArrayList<>();
+	        for (Map<String, Object> map : selectList) {
+	            T t = handleResult(map, this.entityClass);
+	            list.add(t);
+	        }
+	        pm.setList(list);
+		}
+		return pm;
+	}
 
    
 
@@ -305,21 +358,25 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
                 }
             }
         }
-        sql += where.getWherePrams() + "';";
-
-        return sqlSessionTemplate.update("updateByPram", sql);
-
+        
+        MyBatisSql sqlObj = new MyBatisSql(where);
+        sql += sqlObj.getSql();
+        Map<String, Object> map = sqlObj.getArgMap();
+        map.put(SQL_NAME, sql);
+        return sqlSessionTemplate.update("Dao.updateByPram", map);
     }
 
 
     @Override
     public int del(WherePrams where) {
         // TODO Auto-generated method stub
-
-        String sql = "delete from " + tableName + where.getWherePrams();
-        return sqlSessionTemplate.delete("deleteByparm", sql);
+        MyBatisSql sqlObj = new MyBatisSql(where);
+        String sql = "delete from " + tableName +sqlObj.getSql();
+        sql += sqlObj.getSql();
+        Map<String, Object> map = sqlObj.getArgMap();
+        map.put(SQL_NAME, sql);
+        return sqlSessionTemplate.delete("Dao.deleteByparm", map);
     }
-
   
 
     private T handleResult(Map<String, Object> resultMap, Class<T> tClazz) {
@@ -372,7 +429,6 @@ public class BaseDaoImpl<T extends Po, PK extends Serializable> implements BaseD
 		}
 		return false;
 	}
-
 
 
 }

@@ -3,8 +3,10 @@ package com.qk.core.ibatis.dao;
 import java.io.Serializable;
 import java.util.List;
 
+import com.qk.core.ibatis.beans.PagerModel;
 import com.qk.core.ibatis.beans.Po;
-import com.qk.core.ibatis.beans.WherePrams;
+import com.qk.core.ibatis.sql.criteria.WherePrams;
+import com.qk.core.ibatis.sql.order.Order;
 
 /**
  * 公共数据库操作层
@@ -14,7 +16,7 @@ import com.qk.core.ibatis.beans.WherePrams;
  * @param <T> 实体PO类型
  * @param <PK> PO主键类型
  */
-public interface BaseDao<T extends Po, PK extends Serializable> {
+public interface BaseDao<T extends Po> {
 
     /**
      * 记录添加
@@ -28,14 +30,14 @@ public interface BaseDao<T extends Po, PK extends Serializable> {
      * @param id 主键
      * @return PO
      */
-    public T get(PK id);
+    public T get(Serializable id);
     
     /**
      * 通过主键获取某个记录
      * @param id 主键
      * @return PO
      */
-    public T get(Class<T> t,PK id);
+    public T get(Class<T> t,Serializable id);
 
     /**
      * 通过主键获取某个字段的值
@@ -43,7 +45,7 @@ public interface BaseDao<T extends Po, PK extends Serializable> {
      * @param fileName
      * @return
      */
-    public Serializable getField(PK id, String fileName);
+    public Serializable getField(Serializable id, String fileName);
 
     /**
      * 条件获取一条记录
@@ -59,9 +61,22 @@ public interface BaseDao<T extends Po, PK extends Serializable> {
      * @param where 条件表达式
      * @return PO列表
      */
-    public List<T> list(WherePrams where);
+    public List<T> list(WherePrams where,Order order);
+    
+    /**
+     * 条件查询查询个数
+     * @param where 条件表达式
+     * @return PO列表
+     */
+    public Integer selectCountByParm(WherePrams where);
 
-
+    /**
+     * 条件查询列表
+     * @param where 条件表达式
+     * @return PO列表
+     */
+    public PagerModel<T> page(WherePrams where,Order order,int offset,int pageSize);
+    
 
     /**
      * 更新PO的所有字段
@@ -69,7 +84,7 @@ public interface BaseDao<T extends Po, PK extends Serializable> {
      * hasNull 是否包含空，默认为false
      * @return 受影响的行数
      */
-    public int update(T po,Boolean  hasNull);
+    public int update(T po,Boolean  excludeNull);
     
     /**
      * 更新PO的所有字段
@@ -93,7 +108,7 @@ public interface BaseDao<T extends Po, PK extends Serializable> {
      * @param id 主键
      * @return 受影响的行数
      */
-    public int del(PK id);
+    public int del(Serializable id);
 
     /**
      * 条件删除某个记录

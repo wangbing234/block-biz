@@ -7,23 +7,23 @@ import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.fastjson.JSON;
 import com.qk.core.framework.BaseController;
 import com.qk.core.framework.dto.ResultBean;
-import com.qk.core.ibatis.beans.Method;
-import com.qk.core.ibatis.beans.WherePrams;
-import com.qk.core.ibatis.sql.where.C;
+import com.qk.core.ibatis.beans.PagerModel;
+import com.qk.core.ibatis.sql.criteria.And;
+import com.qk.core.ibatis.sql.criteria.Restrictions;
+import com.qk.core.ibatis.sql.order.Order;
 import com.qk.module.font.biz.entity.Book;
 import com.qk.module.font.biz.service.BookService;
+/**前后端/模块**/
 @Controller
-@RequestMapping("/font/book") // url:/模块/资源/{id}/细分 /seckill/list
+@RequestMapping("/font/book")
 
 public class BookController extends BaseController{
 
@@ -39,9 +39,12 @@ public class BookController extends BaseController{
 	 */
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	@ResponseBody
-	private ResultBean list(Model model) {
-		WherePrams where=Method.where("name", C.EQ, "bing.wang");
-		List<Book> list =  bookService.list(where);
+	private ResultBean list(@RequestBody Book book) {
+		And and =new And(null,null);
+		and.add("name", book.getName(),Restrictions.EQ);
+		Order order=new Order();
+		order.add("number").add("ddd");
+		List<Book> list =  bookService.list(and,order);
 		return success(list);
 	}
 	
@@ -71,17 +74,19 @@ public class BookController extends BaseController{
 	
 	
 	/**
-	 * 查询列表
+	 * 查询分页列表
 	 * @param model
 	 * @return
 	 */
-	@RequestMapping(value = "/page", method = RequestMethod.GET)
+	@RequestMapping(value = "/page/{offset}/{pageSize}", method = RequestMethod.GET)
 	@ResponseBody
-	private List<Book> page(Model model) {
-		List<Book> list = bookService.list(null);
-		String jsonStr=JSON.toJSONString(list);
-		logger.info(jsonStr);
-		return list;
+	private ResultBean page(@PathVariable("offset") Integer offset,@PathVariable("pageSize") Integer pageSize,@RequestBody Book book) {
+		And and =new And(null,null);
+		and.add("name", book.getName(),Restrictions.EQ);
+		Order order=new Order();
+		order.add("number").add("ddd");
+		PagerModel<Book> pageModel = bookService.page(and,order,offset,pageSize);
+		return success(pageModel);
 	}
 
 	/**

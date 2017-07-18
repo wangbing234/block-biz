@@ -2,17 +2,17 @@
 <!DOCTYPE mapper
     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.qk.module.font.biz.dao.com.qk.module.font.biz.entity.BookDao">
+<mapper namespace="Book">
 
 	<!-- 目的：为dao接口方法提供sql语句配置 -->
-	<select id="getById" resultType="com.qk.module.font.biz.entity.Book" parameterType="long">
+	<select id="getById" resultType="com.qk.module.font.biz.entity.Book"  parameterType="hashmap" >
 		<!-- 具体的sql -->
 		SELECT
 			*
 		FROM
 			book
 		WHERE
-			book_id = #{bookId}
+			book_id = #{1}
 	</select>
 	
 	<insert id="insert">

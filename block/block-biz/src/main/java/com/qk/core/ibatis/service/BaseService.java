@@ -1,7 +1,5 @@
 package com.qk.core.ibatis.service;
 
-import java.io.Serializable;
-
 import com.qk.core.ibatis.beans.Po;
 import com.qk.core.ibatis.dao.BaseDao;
 
@@ -13,7 +11,7 @@ import com.qk.core.ibatis.dao.BaseDao;
  * @param <T> 实体PO类型
  * @param <PK> PO主键类型
  */
-public interface BaseService<T extends Po, PK extends Serializable> extends BaseDao<T,PK>{
+public interface BaseService<T extends Po> extends BaseDao<T>{
 
 	
 }

@@ -7,6 +7,6 @@ import com.qk.module.font.biz.dao.BookDao;
 import com.qk.module.font.biz.entity.Book;
 
 @Component
-public class BookDaoImpl extends BaseDaoImpl<Book, Long> implements BookDao{
+public class BookDaoImpl extends BaseDaoImpl<Book> implements BookDao{
 
 }

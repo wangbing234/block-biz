@@ -1,5 +1,7 @@
 package com.qk.core.ibatis.beans;
 
+import com.qk.core.ibatis.sql.criteria.WherePrams;
+
 public class FmtParm {
 
 	/**
